@@ -3,12 +3,16 @@ package com.example.unstoppablealarm
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -21,6 +25,10 @@ class AlarmActivity : AppCompatActivity() {
 
     private var mediaPlayer: MediaPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private val handler = Handler(Looper.getMainLooper())
+
+    // How long the alarm blasts before requesting uninstall (in milliseconds)
+    private val UNINSTALL_DELAY_MS = 25_000L   // 25 seconds
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +83,33 @@ class AlarmActivity : AppCompatActivity() {
 
         // Vibrate continuously
         vibrate()
+
+        // After a short blast, request self-uninstall
+        // (Android always shows a confirmation dialog – silent uninstall is not allowed)
+        handler.postDelayed({
+            requestSelfUninstall()
+        }, UNINSTALL_DELAY_MS)
+    }
+
+    private fun requestSelfUninstall() {
+        try {
+            val packageUri = Uri.parse("package:$packageName")
+            val uninstallIntent = Intent(Intent.ACTION_DELETE, packageUri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(uninstallIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Fallback for some devices
+            try {
+                val intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                    data = Uri.parse("package:$packageName")
+                    putExtra(Intent.EXTRA_RETURN_RESULT, true)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            } catch (_: Exception) {}
+        }
     }
 
     private fun playAlarmSound() {
@@ -133,6 +168,7 @@ class AlarmActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
