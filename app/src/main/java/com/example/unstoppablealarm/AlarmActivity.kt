@@ -1,6 +1,7 @@
 package com.example.unstoppablealarm
 
 import android.app.KeyguardManager
+import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioManager
@@ -23,6 +24,10 @@ class AlarmActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Cancel the notification that launched us
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.cancel(AlarmReceiver.NOTIFICATION_ID)
 
         // Make sure we show over lock screen and turn screen on
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -99,11 +104,10 @@ class AlarmActivity : AppCompatActivity() {
                 )
                 // Keep generating a loud tone
                 Thread {
-                    while (mediaPlayer == null || mediaPlayer?.isPlaying == true) {
+                    while (true) {
                         toneGen.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1000)
                         Thread.sleep(1100)
                     }
-                    toneGen.release()
                 }.start()
             } catch (_: Exception) {}
         }
