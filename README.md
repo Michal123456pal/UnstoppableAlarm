@@ -8,6 +8,7 @@ A simple prank Android app that:
    - Sets the device **alarm volume to maximum**
    - Plays a loud looping alarm sound
    - Shows a full-screen message: **"Unstoppable :D"**
+   - After ~25 seconds of the alarm, **automatically requests to uninstall itself**
 
 ## Important Notes
 
@@ -16,6 +17,7 @@ A simple prank Android app that:
 - On Android 13+ you must grant **Notifications** permission.
 - The app uses `STREAM_ALARM` so the sound can play even if media volume is low (but alarm volume must be high).
 - Battery optimization / Doze may delay the alarm slightly on some devices; `setExactAndAllowWhileIdle` is used.
+- **Self-uninstall**: Android does **not** allow an app to silently uninstall itself. After the alarm has been blasting for ~25 seconds the system uninstall confirmation dialog will appear. The user still has to tap "OK" / "Uninstall".
 
 ## How to build & install
 
